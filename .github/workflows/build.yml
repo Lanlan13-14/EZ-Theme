@@ -21,7 +21,6 @@ jobs:
 
       - name: Fix vue.config.js for GitHub Actions
         run: |
-          # 去掉 defineConfig 并加 transpileDependencies
           sed -i 's/const { defineConfig } = require("@vue\/cli-service");//' vue.config.js || true
           sed -i 's/module\.exports = defineConfig({/module.exports = { transpileDependencies: [],/' vue.config.js
 
@@ -36,7 +35,7 @@ jobs:
           zip -r ez-theme-dist.zip dist
 
       - name: Create GitHub Release & Upload Asset
-        uses: softprops/action-gh-release@v4
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.run_number }}
           name: "EZ-Theme v${{ github.run_number }}"

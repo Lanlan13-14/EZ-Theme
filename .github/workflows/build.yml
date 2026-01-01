@@ -1,4 +1,4 @@
-name: Build EZ-Theme
+name: Build & Release EZ-Theme
 
 on:
   push:
@@ -7,11 +7,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
-        uses: actions/upload-artifact@v4
+        uses: actions/checkout@v3
 
       - name: Setup Node.js 16
         uses: actions/setup-node@v3
@@ -30,8 +31,15 @@ jobs:
       - name: Build production
         run: npm run build
 
-      - name: Upload dist folder as artifact
-        uses: actions/upload-artifact@v3
+      - name: Zip dist folder
+        run: |
+          zip -r ez-theme-dist.zip dist
+
+      - name: Create GitHub Release & Upload Asset
+        uses: softprops/action-gh-release@v4
         with:
-          name: ez-theme-dist
-          path: dist
+          tag_name: v${{ github.run_number }}
+          name: "EZ-Theme v${{ github.run_number }}"
+          files: ez-theme-dist.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

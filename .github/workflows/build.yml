@@ -11,29 +11,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ 拉取代码
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2️⃣ 安装 Node.js 16
       - name: Setup Node.js 16
         uses: actions/setup-node@v3
         with:
           node-version: '16'
 
-      - name: Fix vue.config.js for GitHub Actions
+      # 3️⃣ 修复 vue.config.js 避免 defineConfig 和语法错误
+      - name: Fix vue.config.js
         run: |
+          # 删除 defineConfig 引入
           sed -i 's/const { defineConfig } = require("@vue\/cli-service");//' vue.config.js || true
+          # 将 module.exports = defineConfig({ 替换成 module.exports = { transpileDependencies: [], 
           sed -i 's/module\.exports = defineConfig({/module.exports = { transpileDependencies: [],/' vue.config.js
+          # 删除文件末尾多余的 });
+          sed -i '$s/});$/}/' vue.config.js
 
+      # 4️⃣ 安装依赖，忽略 peer 依赖冲突
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      # 5️⃣ 构建生产版本
       - name: Build production
         run: npm run build
 
+      # 6️⃣ 打包 dist 文件夹
       - name: Zip dist folder
-        run: |
-          zip -r ez-theme-dist.zip dist
+        run: zip -r ez-theme-dist.zip dist
 
+      # 7️⃣ 创建 Release 并上传 dist zip
       - name: Create GitHub Release & Upload Asset
         uses: softprops/action-gh-release@v1
         with:

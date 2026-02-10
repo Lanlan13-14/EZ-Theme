@@ -1,0 +1,62 @@
+name: Build & Release FastEdge WASM (Single-File Repo)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate project files
+        run: |
+          mkdir -p src
+
+          # Write FastEdge 204 app
+          cat > src/index.js << 'EOF'
+          import { FastEdgeApp } from "@gcoredev/fastedge-sdk-js";
+
+          const app = new FastEdgeApp();
+
+          app.get("/", () => new Response(null, { status: 204 }));
+
+          export default app;
+          EOF
+
+          # Write package.json
+          cat > package.json << 'EOF'
+          {
+            "name": "fastedge-204",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "fastedge build"
+            },
+            "devDependencies": {
+              "@gcoredev/fastedge-sdk-js": "latest"
+            }
+          }
+          EOF
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build WASM
+        run: npm run build
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.wasm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

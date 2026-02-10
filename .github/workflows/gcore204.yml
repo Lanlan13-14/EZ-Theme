@@ -1,9 +1,8 @@
-name: Build & Release FastEdge WASM (Rust, Single-File Repo)
+name: Auto Build & Release FastEdge WASM (Rust, Single-File Repo)
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -65,9 +64,12 @@ jobs:
           cd myapp
           cargo build --release
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (fixed tag)
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: "gcore-fastedge-204"
+          name: "Gcore FastEdge 204 WASM"
           files: myapp/target/wasm32-wasip1/release/myapp.wasm
+          overwrite: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

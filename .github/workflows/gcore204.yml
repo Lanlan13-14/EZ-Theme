@@ -1,4 +1,4 @@
-name: Build & Release FastEdge WASM (Single-File Repo)
+name: Build & Release FastEdge WASM (Rust, Single-File Repo)
 
 on:
   push:
@@ -14,49 +14,60 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Generate project files
+      - name: Add wasm target
+        run: rustup target add wasm32-wasip1
+
+      - name: Generate Rust FastEdge project
         run: |
-          mkdir -p src
+          cargo new myapp --lib
+          mkdir -p myapp/.cargo
 
-          # Write FastEdge 204 app
-          cat > src/input.js << 'EOF'
-          async function app(event) {
-            return new Response(null, { status: 204 });
-          }
-          addEventListener('fetch', (event) => {
-            event.respondWith(app(event));
-          });
+          # Cargo config
+          cat > myapp/.cargo/config.toml << 'EOF'
+          [build]
+          target = "wasm32-wasip1"
           EOF
 
-          # Write package.json
-          cat > package.json << 'EOF'
-          {
-            "name": "fastedge-204",
-            "version": "1.0.0",
-            "scripts": {
-              "build": "npx fastedge-build ./src/input.js dist/main.wasm"
-            },
-            "devDependencies": {
-              "@gcoredev/fastedge-sdk-js": "latest",
-              "fastedge-build": "latest"
-            }
-          }
+          # Cargo.toml
+          cat > myapp/Cargo.toml << 'EOF'
+          [package]
+          name = "myapp"
+          version = "0.1.0"
+          edition = "2021"
+
+          [lib]
+          crate-type = ["cdylib"]
+
+          [dependencies]
+          fastedge = "0.2"
           EOF
 
-      - name: Install dependencies
-        run: npm install
+          # src/lib.rs
+          cat > myapp/src/lib.rs << 'EOF'
+          use fastedge::{
+            body::Body,
+            http::{Request, Response, StatusCode, Error},
+          };
+
+          #[fastedge::http]
+          fn main(_req: Request<Body>) -> Result<Response<Body>, Error> {
+            Response::builder()
+              .status(StatusCode::NO_CONTENT)
+              .body(Body::empty())
+          }
+          EOF
 
       - name: Build WASM
-        run: npm run build
+        run: |
+          cd myapp
+          cargo build --release
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.wasm
+          files: myapp/target/wasm32-wasip1/release/myapp.wasm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

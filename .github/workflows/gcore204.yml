@@ -40,10 +40,11 @@ jobs:
             "name": "fastedge-204",
             "version": "1.0.0",
             "scripts": {
-              "build": "npx @gcoredev/fastedge-sdk-js build"
+              "build": "fastedge build"
             },
             "devDependencies": {
-              "@gcoredev/fastedge-sdk-js": "latest"
+              "@gcoredev/fastedge-sdk-js": "latest",
+              "@gcoredev/fastedge-cli": "latest"
             }
           }
           EOF
@@ -52,7 +53,7 @@ jobs:
         run: npm install
 
       - name: Build WASM
-        run: npm run build
+        run: npx fastedge build
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
